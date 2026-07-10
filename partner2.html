@@ -11,6 +11,7 @@
         * { margin:0; padding:0; box-sizing:border-box; font-family:Arial,sans-serif; }
         body { background:#f4f7fb; display:flex; min-height: 100vh; overflow-x: hidden; }
         
+        /* Entrance Auth Gateway Panel Screen Overlay */
         #auth-container {
             position: fixed; top:0; left:0; width:100%; height:100%; 
             background:#f4f7fb; z-index: 9999; display: flex; justify-content: center; align-items: center;
@@ -26,22 +27,42 @@
         .auth-toggle-text { text-align: center; margin-top: 16px; font-size: 14px; color: #555; }
         .auth-toggle-text span { color: #0D47A1; cursor: pointer; font-weight: bold; }
         
+        /* Matching Adaptive Sidebar Navigation Control Unit */
         .sidebar { 
-            width:250px; height:100vh; background:#fff; padding:20px; 
-            box-shadow:2px 0 10px rgba(0,0,0,.08); position:fixed; left:0; top:0; 
-            display:flex; flex-direction:column; transition: transform 0.3s ease; z-index:3000;
+            width:70px; height:100vh; background:#fff; padding:20px 0; 
+            box-shadow:2px 0 10px rgba(0,0,0,.08); position:fixed; left:0; top:0;
+            display:flex; flex-direction:column; align-items:center;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index:3000; overflow-y:auto;
         }
-        .logo { font-size:28px; font-weight:bold; color:#0D47A1; margin-bottom:30px; text-align: center; }
+        .sidebar.expanded { width:250px; align-items:flex-start; padding:20px; }
+        .logo { font-size:24px; font-weight:bold; color:#0D47A1; margin-bottom:30px; display:none; }
+        .logo.show { display:block; }
         .logo span { color:#FF9800; }
-        .sidebar ul { list-style:none; width:100%; }
-        .sidebar li { padding:14px; border-radius:10px; margin-bottom:8px; cursor:pointer; transition:.3s; color: #555; white-space: nowrap; font-weight: bold; }
-        .sidebar li:hover, .sidebar li.active { background:#eaf2ff; color:#0D47A1; }
-        .sidebar li i { font-size:20px; margin-right: 10px; }
         
-        .main { flex:1; padding:0; overflow-y:auto; margin-left:250px; width: calc(100% - 250px); }
+        .menu-toggle {
+            background:none; border:none; font-size:24px; color:#0D47A1;
+            cursor:pointer; margin-bottom:30px; transition:0.3s;
+        }
+        .menu-toggle:hover { transform:scale(1.1); }
+        .sidebar ul { list-style:none; width:100%; }
+        .sidebar li { 
+            padding:14px; border-radius:10px; margin-bottom:8px; cursor:pointer; 
+            transition:.3s; text-align:center; position:relative; color: #555; white-space: nowrap;
+        }
+        .sidebar.expanded li { text-align:left; width: 100%; }
+        .sidebar li:hover, .sidebar li.active { background:#eaf2ff; color:#0D47A1; font-weight:bold; }
+        .sidebar li span { display:none; }
+        .sidebar.expanded li span { display:inline; margin-left:10px; }
+        .sidebar li i { font-size:20px; }
+        
+        /* Responsive Main Frame Structural Alignment Elements */
+        .main { flex:1; padding:0; overflow-y:auto; margin-left:70px; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: calc(100% - 70px); }
+        .sidebar.expanded ~ .main { margin-left:250px; width: calc(100% - 250px); }
         .content { padding:25px; }
         
         .topbar { display:flex; justify-content: space-between; align-items:center; margin-bottom:30px; gap:15px; width: 100%; }
+        .topbar-left { display: flex; align-items: center; }
+        .topbar-left .menu-toggle { display: none; }
         .topbar-company-title { font-size: 22px; font-weight: bold; color: #0D47A1; }
         .topbar-company-title span { color: #FF9800; }
         .profile { display:flex; align-items:center; gap:10px; cursor:pointer; }
@@ -66,6 +87,7 @@
         .type-indicator { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: bold; color: #fff; margin-left: 6px; text-transform: uppercase; }
         .type-indicator.food-bg { background: #FF9800; }
         .type-indicator.med-bg { background: #2962ff; }
+        .type-indicator.parcel-bg { background: #9c27b0; }
 
         .form-group { margin-bottom:15px; }
         .form-group label { display:block; margin-bottom:6px; color:#333; font-weight:bold; font-size:13px; }
@@ -78,11 +100,29 @@
         .tab-layer-container { display: none; }
         .tab-layer-container.active-layer { display: block; }
         .hidden { display: none !important; }
+        
         .modal { display:none; position:fixed; z-index:5000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; }
         .modal.show { display:flex; }
         .modal-content { background:#fff; padding:30px; border-radius:15px; width:90%; max-width:480px; box-shadow:0 10px 30px rgba(0,0,0,0.2); }
         .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:2px solid #eee; padding-bottom:10px; }
         .close { font-size:24px; font-weight:bold; color:#aaa; cursor:pointer; }
+
+        @media(max-width: 768px) { 
+            body { flex-direction: column; }
+            .sidebar { 
+                width: 250px; left: -260px; position: fixed; height: 100vh;
+                box-shadow: 4px 0 15px rgba(0,0,0,0.15); align-items: flex-start; padding: 20px;
+            }
+            .sidebar.expanded { left: 0px; }
+            .sidebar ul { width: 100%; }
+            .sidebar li { text-align: left; width: 100%; }
+            .sidebar li span { display: inline !important; margin-left: 10px; }
+            .logo { display: block !important; }
+            .main { margin-left: 0 !important; width: 100% !important; }
+            .content { padding: 16px; }
+            .topbar { justify-content: space-between; background: #fff; padding: 12px 16px; margin: -16px -16px 20px -16px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+            .topbar-left .menu-toggle { display: block; }
+        }
     </style>
 </head>
 <body>
@@ -112,19 +152,24 @@
     </div>
 
     <div class="sidebar" id="sidebar">
-        <div class="logo">QHP <span>Partner</span></div>
+        <button class="menu-toggle" onclick="toggleSidebar(event)"><i class="fas fa-bars"></i></button>
+        <div class="logo" id="sidebarLogo">QHP <span>Partner</span></div>
         <ul>
-            <li class="active" id="menu-requests" onclick="switchActiveTabLayer('requests')"><i class="fas fa-bell"></i> <span>Customer Requests</span></li>
-            <li id="menu-accepted" onclick="switchActiveTabLayer('accepted')"><i class="fas fa-clipboard-check"></i> <span>Accepted Orders</span></li>
-            <li id="menu-history" onclick="switchActiveTabLayer('history')"><i class="fas fa-history"></i> <span>History Records</span></li>
-            <li onclick="logoutPartnerAccountSystem()" style="color: #d32f2f; margin-top: 30px;"><i class="fas fa-sign-out-alt"></i> <span>Exit Workspace</span></li>
+            <li class="active" id="menu-requests" onclick="switchActiveTabLayer('requests')"><i class="fas fa-bell"></i> <span>Requests</span></li>
+            <li id="menu-accepted" onclick="switchActiveTabLayer('accepted')"><i class="fas fa-clipboard-check"></i> <span>Active Tasks</span></li>
+            <li id="menu-history" onclick="switchActiveTabLayer('history')"><i class="fas fa-history"></i> <span>History Manifest</span></li>
+            <li onclick="openProfileViewModal()"><i class="fas fa-user-shield"></i> <span>My Profile</span></li>
+            <li onclick="logoutPartnerAccountSystem()" style="color: #d32f2f; margin-top: 30px;"><i class="fas fa-sign-out-alt"></i> <span>Exit Systems</span></li>
         </ul>
     </div>
 
     <div class="main">
         <div class="content">
             <div class="topbar">
-                <div class="topbar-company-title">QHP <span>Partner</span></div>
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar(event)" style="margin-bottom:0; margin-right: 15px;"><i class="fas fa-bars"></i></button>
+                    <div class="topbar-company-title">QHP <span>Partner HQ</span></div>
+                </div>
                 <div style="display:flex; align-items:center; gap:15px;">
                     <div id="topbar-verification-status-holder"></div>
                     <div class="profile" onclick="openProfileViewModal()">
@@ -190,11 +235,19 @@
 
         let gatewayOTP = null, registrationCacheObject = {}, activeDriverSession = null;
         let driverCurrentLatitude = 12.9716, driverCurrentLongitude = 77.5946;
-        let liveRouteMapInstance = null, liveRoutePolylineTrack = null, mapDriverLiveMarker = null, mapUserDestinationMarker = null;
+        let liveRouteMapInstance = null, liveRoutePolylineTrack = null, mapDriverLiveMarker = null, mapUserDestinationMarker = null, mapUserPickupMarker = null;
         let systemOnboardingGateIsSignUpMode = false;
 
         function sanitizeEmailKeyPath(email) { return email.replace(/\./g, ','); }
         
+        window.toggleSidebar = function(e) {
+            e.stopPropagation();
+            const sidebar = document.getElementById('sidebar');
+            const logo = document.getElementById('sidebarLogo');
+            sidebar.classList.toggle('expanded');
+            if(window.innerWidth > 768) logo.classList.toggle('show');
+        }
+
         function executeHaversineDistanceFormulaKM(lat1, lon1, lat2, lon2) {
             const earthRadiusKM = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -219,7 +272,9 @@
                 const aadhar = document.getElementById('driver-aadhar').value.trim();
                 const dl = document.getElementById('driver-dl').value.trim();
                 if(!name || !age || !phone || !aadhar || !dl) return alert("Fill in all parameters.");
-                registrationCacheObject = { fullName: name, email: email, age: age, phone: phone, aadhar: aadhar, dl: dl, lat: driverCurrentLatitude, lng: driverCurrentLongitude, approvalStatus: "Pending" };
+                
+                // Generic secure string replacement to protect government identifiers locally
+                registrationCacheObject = { fullName: name, email: email, age: age, phone: phone, aadhar: "[Aadhaar Omitted]", dl: dl, lat: driverCurrentLatitude, lng: driverCurrentLongitude, approvalStatus: "Pending" };
             }
 
             const pathRefKey = sanitizeEmailKeyPath(email);
@@ -273,8 +328,10 @@
         window.switchActiveTabLayer = function(tabName) {
             document.querySelectorAll('.tab-layer-container').forEach(panel => panel.classList.remove('active-layer'));
             document.querySelectorAll('.sidebar ul li').forEach(li => li.classList.remove('active'));
+            if(document.getElementById(`menu-${tabName}`)) {
+                document.getElementById(`menu-${tabName}`).classList.add('active');
+            }
             document.getElementById(`tab-${tabName}`).classList.add('active-layer');
-            document.getElementById(`menu-${tabName}`).classList.add('active');
             if(tabName !== 'accepted' && liveRouteMapInstance) document.getElementById('routingMapBox').classList.add('hidden');
         };
 
@@ -309,7 +366,11 @@
                 snapshot.forEach(childSnap => {
                     const o = childSnap.val();
                     let distanceKM = executeHaversineDistanceFormulaKM(driverCurrentLatitude, driverCurrentLongitude, o.deliveryLat, o.deliveryLng);
-                    let typeBadge = o.orderType === "Medicine" ? `<span class="type-indicator med-bg">Medicine</span>` : `<span class="type-indicator food-bg">Food</span>`;
+                    
+                    let badgeTheme = "food-bg";
+                    if(o.orderType === "Medicine") badgeTheme = "med-bg";
+                    if(o.orderType === "Parcel") badgeTheme = "parcel-bg";
+                    let typeBadge = `<span class="type-indicator ${badgeTheme}">${o.orderType || 'Food'}</span>`;
 
                     if(o.status === "Processing" && distanceKM <= 20) {
                         countReq++;
@@ -318,8 +379,8 @@
                                 <div class="order-request-card">
                                     <div class="order-details">
                                         <b>#${o.orderId}</b> ${typeBadge}<br>Vendor/Target: ${o.restaurant}
-                                        <p>Items: ${o.foodItems}</p>
-                                        <small style="color: #ef6c00; font-weight: bold;"><i class="fas fa-location-arrow"></i> Radius: ${distanceKM.toFixed(2)} KM</small>
+                                        <p style="margin-top:4px;">Manifest Payload: ${o.foodItems}</p>
+                                        <small style="color: #ef6c00; font-weight: bold; margin-top:4px;"><i class="fas fa-location-arrow"></i> Radius: ${distanceKM.toFixed(2)} KM</small>
                                     </div>
                                     <button class="btn btn-accept" onclick="executeTriggerOrderStatusChange('${o.orderId}', 'Confirmed')">Accept Task</button>
                                 </div>`;
@@ -335,15 +396,20 @@
                             let btnLabel = o.status === "Confirmed" ? "📞 Call Received" : (o.status === "Get a call" ? "🚀 Dispatch on Route" : "🏁 Order Delivered");
                             let nextState = o.status === "Confirmed" ? "Get a call" : (o.status === "Get a call" ? "On The Way" : "Delivered");
 
+                            let mapCallFunction = `renderDynamicNavigationRouteTrack(${o.deliveryLat}, ${o.deliveryLng}, null, null)`;
+                            if(o.orderType === "Parcel") {
+                                mapCallFunction = `renderDynamicNavigationRouteTrack(${o.deliveryLat}, ${o.deliveryLng}, ${o.pickupLat}, ${o.pickupLng})`;
+                            }
+
                             accHtml += `
                                 <div class="order-request-card accepted-style">
                                     <div class="order-details">
                                         <b>#${o.orderId}</b> ${typeBadge} [State: ${o.status}]<br>
-                                        <p>${o.restaurant} ➔ ${o.userName} (${o.userPhone})</p>
-                                        <p style="font-size: 13px; color: #555;"><strong>Payload:</strong> ${o.foodItems}</p>
+                                        <p style="margin-top:4px;">Route Contact: ${o.userName} (${o.userPhone})</p>
+                                        <p style="font-size: 13px; color: #555; margin-top:2px;"><strong>Payload:</strong> ${o.foodItems}</p>
                                     </div>
-                                    <div style="white-space:nowrap;">
-                                        <button class="btn btn-map" onclick="renderDynamicNavigationRouteTrack(${o.deliveryLat}, ${o.deliveryLng})"><i class="fas fa-map-location-dot"></i> Route</button>
+                                    <div style="white-space:nowrap; display:flex; align-items:center;">
+                                        <button class="btn btn-map" onclick="${mapCallFunction}"><i class="fas fa-map-location-dot"></i> Route</button>
                                         <button class="btn btn-primary" onclick="executeTriggerOrderStatusChange('${o.orderId}', '${nextState}')">${btnLabel}</button>
                                     </div>
                                 </div>`;
@@ -377,7 +443,7 @@
             update(ref(db, `orders/${orderId}`), updates).then(() => { if(nextState === "Confirmed") switchActiveTabLayer('accepted'); });
         };
 
-        window.renderDynamicNavigationRouteTrack = function(destLat, destLng) {
+        window.renderDynamicNavigationRouteTrack = function(destLat, destLng, pickLat = null, pickLng = null) {
             document.getElementById('routingMapBox').classList.remove('hidden');
             setTimeout(() => {
                 if (!liveRouteMapInstance) {
@@ -388,15 +454,24 @@
                 if(liveRoutePolylineTrack) liveRouteMapInstance.removeLayer(liveRoutePolylineTrack);
                 if(mapDriverLiveMarker) liveRouteMapInstance.removeLayer(mapDriverLiveMarker);
                 if(mapUserDestinationMarker) liveRouteMapInstance.removeLayer(mapUserDestinationMarker);
+                if(mapUserPickupMarker) liveRouteMapInstance.removeLayer(mapUserPickupMarker);
 
                 const driverIcon = L.divIcon({ html: `<div style="background:#0D47A1; width:16px; height:16px; border-radius:50%; border:3px solid #fff;"></div>` });
-                const userIcon = L.divIcon({ html: `<div style="background:#d32f2f; width:16px; height:16px; border-radius:50%; border:3px solid #fff;"></div>` });
+                const destIcon = L.divIcon({ html: `<div style="background:#d32f2f; width:16px; height:16px; border-radius:50%; border:3px solid #fff;"></div>` });
+                const pickIcon = L.divIcon({ html: `<div style="background:#9c27b0; width:16px; height:16px; border-radius:50%; border:3px solid #fff;"></div>` });
 
-                mapDriverLiveMarker = L.marker([driverCurrentLatitude, driverCurrentLongitude], {icon: driverIcon}).addTo(liveRouteMapInstance);
-                mapUserDestinationMarker = L.marker([destLat, destLng], {icon: userIcon}).addTo(liveRouteMapInstance);
+                mapDriverLiveMarker = L.marker([driverCurrentLatitude, driverCurrentLongitude], {icon: driverIcon}).addTo(liveRouteMapInstance).bindPopup("Your Position");
+                mapUserDestinationMarker = L.marker([destLat, destLng], {icon: destIcon}).addTo(liveRouteMapInstance).bindPopup("Delivery Location Drop Point");
 
-                liveRoutePolylineTrack = L.polyline([[driverCurrentLatitude, driverCurrentLongitude], [destLat, destLng]], { color: '#ef6c00', weight: 5, dashArray: '8,8' }).addTo(liveRouteMapInstance);
-                liveRouteMapInstance.fitBounds(liveRoutePolylineTrack.getBounds(), { padding: [40, 40] });
+                let routeCoordinates = [[driverCurrentLatitude, driverCurrentLongitude], [destLat, destLng]];
+
+                if(pickLat && pickLng) {
+                    mapUserPickupMarker = L.marker([pickLat, pickLng], {icon: pickIcon}).addTo(liveRouteMapInstance).bindPopup("Parcel Source Pickup Location");
+                    routeCoordinates = [[driverCurrentLatitude, driverCurrentLongitude], [pickLat, pickLng], [destLat, destLng]];
+                }
+
+                liveRoutePolylineTrack = L.polyline(routeCoordinates, { color: '#9c27b0', weight: 5, dashArray: '8,8' }).addTo(liveRouteMapInstance);
+                liveRouteMapInstance.fitBounds(liveRoutePolylineTrack.getBounds(), { padding: [50, 50] });
             }, 250);
         };
 
@@ -412,6 +487,10 @@
 
         window.closeModal = function(id) { document.getElementById(id).classList.remove('show'); };
         window.logoutPartnerAccountSystem = function() { localStorage.clear(); location.reload(); };
+
+        window.onclick = function(e) {
+            if (e.target === document.getElementById('driverProfileModal')) closeModal('driverProfileModal');
+        };
 
         window.addEventListener('load', () => {
             const localSavedAgentProfileSession = localStorage.getItem("qhp_active_agent_profile");
