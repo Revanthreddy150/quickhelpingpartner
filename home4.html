@@ -180,8 +180,9 @@
         .btn-delete-chip { background: none; border: none; color: #dc2626; cursor: pointer; font-size: 14px; }
 
         .btn { padding:13px 22px; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:bold; transition:.2s ease-in-out; text-align: center; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-primary { background:#0D47A1; color:#fff; flex:1; }
-        .btn-primary:hover { background:#0B3C8F; transform:translateY(-1px); box-shadow: 0 4px 12px rgba(13,71,161,0.2); }
+        .btn-primary:hover:not(:disabled) { background:#0B3C8F; transform:translateY(-1px); box-shadow: 0 4px 12px rgba(13,71,161,0.2); }
         .btn-map-launch { background:#9c27b0; color:#fff; margin-bottom:10px; }
         .btn-map-launch:hover { background:#7b1fa2; }
         
@@ -248,7 +249,7 @@
             <div class="auth-subtitle">Welcome back! Access your workspace</div>
             <div id="login-form-step">
                 <div class="form-group"><label>Email Address</label><input type="email" id="li-email" placeholder="enter email"></div>
-                <button class="btn btn-primary" onclick="handleLoginSendOTP()">Send Secure Link OTP</button>
+                <button id="btn-login-send-otp" class="btn btn-primary" onclick="handleLoginSendOTP()">Send Secure Link OTP</button>
             </div>
             <div id="login-otp-step" class="hidden">
                 <div class="form-group"><label>Enter Security OTP</label><input type="text" id="li-otp" placeholder="6-digit Code"></div>
@@ -264,7 +265,7 @@
                 <div class="form-group"><label>Full Name</label><input type="text" id="su-name" placeholder="Enter Full Name"></div>
                 <div class="form-group"><label>Email Address</label><input type="email" id="su-email" placeholder="enter email"></div>
                 <div class="form-group"><label>Phone Number</label><input type="tel" id="su-phone" placeholder="Enter Phone Number"></div>
-                <button class="btn btn-primary" onclick="handleSignUpSendOTP()">Send Verification OTP</button>
+                <button id="btn-signup-send-otp" class="btn btn-primary" onclick="handleSignUpSendOTP()">Send Verification OTP</button>
             </div>
             <div id="signup-otp-step" class="hidden">
                 <div class="form-group"><label>Enter OTP sent to Email</label><input type="text" id="su-otp" placeholder="6-digit Code"></div>
@@ -909,10 +910,18 @@
             const phone = document.getElementById('su-phone').value.trim();
             if(!name || !email || !phone) return showCustomAlert("Please fill in all details.", true);
 
+            const signupBtn = document.getElementById('btn-signup-send-otp');
+            signupBtn.disabled = true;
+            signupBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Dispatched Code...`;
+
             const safeKey = sanitizePathKey(email);
             try {
                 const snapshot = await get(child(ref(db), `users/${safeKey}`));
-                if (snapshot.exists()) return showCustomAlert("Email already registered. Please login.", true);
+                if (snapshot.exists()) {
+                    signupBtn.disabled = false;
+                    signupBtn.innerText = "Send Verification OTP";
+                    return showCustomAlert("Email already registered. Please login.", true);
+                }
             } catch (err) { console.error(err); }
 
             dynamicGeneratedOTP = createOTP();
@@ -921,7 +930,11 @@
                 showCustomAlert("OTP sent successfully to your email address!");
                 document.getElementById('signup-form-step').classList.add('hidden');
                 document.getElementById('signup-otp-step').classList.remove('hidden');
-            }).catch(() => showCustomAlert("Failed to send verification OTP.", true));
+            }).catch(() => {
+                signupBtn.disabled = false;
+                signupBtn.innerText = "Send Verification OTP";
+                showCustomAlert("Failed to send verification OTP.", true);
+            });
         }
 
         window.handleSignUpVerifyOTP = function() {
@@ -936,6 +949,11 @@
         window.handleLoginSendOTP = async function() {
             const email = document.getElementById('li-email').value.trim();
             if(!email) return showCustomAlert("Please enter email address.", true);
+
+            const loginBtn = document.getElementById('btn-login-send-otp');
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Checking Account...`;
+
             try {
                 const snapshot = await get(child(ref(db), `users/${sanitizePathKey(email)}`));
                 if (snapshot.exists()) {
@@ -945,9 +963,21 @@
                         showCustomAlert("OTP sent successfully to your email address!");
                         document.getElementById('login-form-step').classList.add('hidden');
                         document.getElementById('login-otp-step').classList.remove('hidden');
+                    }).catch(() => {
+                        loginBtn.disabled = false;
+                        loginBtn.innerText = "Send Secure Link OTP";
+                        showCustomAlert("Failed to dispatch code via servers.", true);
                     });
-                } else showCustomAlert("No account matching this email address.", true);
-            } catch(e) { showCustomAlert("Server connection error.", true); }
+                } else {
+                    loginBtn.disabled = false;
+                    loginBtn.innerText = "Send Secure Link OTP";
+                    showCustomAlert("No account matching this email address.", true);
+                }
+            } catch(e) { 
+                loginBtn.disabled = false;
+                loginBtn.innerText = "Send Secure Link OTP";
+                showCustomAlert("Server connection error.", true); 
+            }
         }
 
         window.handleLoginVerifyOTP = function() {
@@ -974,14 +1004,19 @@
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(position => {
                     userLat = position.coords.latitude; userLng = position.coords.longitude;
-                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLat}&lon=${userLng}`).then(res => res.json()).then(data => {
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLat}&lon=${userLng}`)
+                    .then(res => res.json())
+                    .then(data => {
                         document.getElementById('locationLoaderSpan').classList.add('hidden');
-                        document.getElementById('currentAreaText').textContent = data.address.suburb || data.address.neighbourhood || data.address.city || "Exact Location";
-                        window.cachedFullAddress = data.display_name;
-                    });
+                        const addr = data.address || {};
+                        const locationName = addr.suburb || addr.neighbourhood || addr.city_district || addr.town || addr.city || addr.village || "Exact Location";
+                        document.getElementById('currentAreaText').textContent = locationName;
+                        window.cachedFullAddress = data.display_name || "Location Profile Live";
+                    }).catch(() => fallbackLocationText());
                 }, () => fallbackLocationText());
             } else fallbackLocationText();
         }
+        
         function fallbackLocationText() {
             document.getElementById('locationLoaderSpan').classList.add('hidden');
             document.getElementById('currentAreaText').textContent = "Location Profile Live";
@@ -991,7 +1026,15 @@
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
                     userLat = pos.coords.latitude; userLng = pos.coords.longitude;
-                    if(map) updateMapViewCanvas();
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLat}&lon=${userLng}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const addr = data.address || {};
+                        const locationName = addr.suburb || addr.neighbourhood || addr.city_district || addr.town || addr.city || addr.village || "Exact Location";
+                        document.getElementById('currentAreaText').textContent = locationName;
+                        window.cachedFullAddress = data.display_name;
+                        if(map) updateMapViewCanvas();
+                    });
                 });
             }
         }
