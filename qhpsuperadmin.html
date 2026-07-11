@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QHP SuperAdmin Security Control Vault</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:Arial,sans-serif; }
+        body { background:#020617; color:#f8fafc; padding:40px; min-height:100vh; }
+        .header { border-bottom: 2px solid #1e293b; padding-bottom: 20px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { color: #f43f5e; font-size: 28px; }
+        .header p { color: #94a3b8; font-size: 14px; margin-top: 4px; }
+        
+        .grid-layout { display: grid; grid-template-columns: 1fr 1.2fr; gap: 35px; }
+        @media(max-width: 992px) { .grid-layout { grid-template-columns: 1fr; } }
+        
+        .panel-vault { background: #0f172a; border: 1px solid #1e293b; padding: 30px; border-radius: 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+        .panel-vault h3 { color: #38bdf8; font-size: 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 13px; font-weight: bold; color: #cbd5e1; margin-bottom: 8px; }
+        .form-group input { width: 100%; padding: 12px 16px; background: #020617; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 14px; outline: none; }
+        .form-group input:focus { border-color: #f43f5e; }
+        
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-rose { background: #f43f5e; color: #fff; }
+        .btn-rose:hover { background: #e11d48; }
+        
+        .token-card { background: #020617; border: 1px solid #1e293b; padding: 16px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .token-info b { color: #f8fafc; font-size: 15px; font-family: monospace; background: #1e293b; padding: 2px 6px; border-radius: 4px; }
+        .token-info p { color: #64748b; font-size: 12px; margin-top: 6px; }
+        .btn-delete { background: none; border: none; color: #ef4444; font-size: 16px; cursor: pointer; transition: 0.2s; }
+        .btn-delete:hover { color: #f43f5e; transform: scale(1.1); }
+        
+        .log-item { background: #020617; border-left: 4px solid #38bdf8; padding: 16px; border-radius: 6px; margin-bottom: 12px; border-top: 1px solid #1e293b; border-right: 1px solid #1e293b; border-bottom: 1px solid #1e293b; }
+        .log-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .log-meta b { color: #38bdf8; font-size: 14px; }
+        .log-meta span { font-size: 11px; color: #64748b; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div>
+            <h1>SuperAdmin Control Vault</h1>
+            <p>Master Password Configuration & Security Audit Framework</p>
+        </div>
+        <i class="fas fa-vault" style="font-size: 36px; color: #f43f5e;"></i>
+    </div>
+
+    <div class="grid-layout">
+        <!-- Password Token Management Section -->
+        <div class="panel-vault">
+            <h3><i class="fas fa-key"></i> Passphrase Token Generation</h3>
+            <div class="form-group">
+                <label>Label Reference Description</label>
+                <input type="text" id="passLabelInput" placeholder="e.g. Vizag Regional Office Terminal">
+            </div>
+            <div class="form-group">
+                <label>Secure Key Passphrase String</label>
+                <input type="text" id="passTokenStrInput" placeholder="Enter custom access passphrase token">
+            </div>
+            <button class="btn btn-rose" onclick="executeCreateNewAccessPasswordToken()"><i class="fas fa-plus"></i> Inject Access Token</button>
+
+            <h3 style="margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 25px;"><i class="fas fa-shield-halved"></i> Active Access Passphrases</h3>
+            <div id="activeTokensViewport"><p style="color:#64748b;">Syncing token reference sheets...</p></div>
+        </div>
+
+        <!-- System Authentication Logs Section -->
+        <div class="panel-vault">
+            <h3><i class="fas fa-clock-rotate-left"></i> Live Terminal Entry Audit Tracker</h3>
+            <p style="color:#64748b; font-size: 13px; margin-bottom: 20px;">Displays live entries of administrators logging into client panels, tracking passphrase tokens, geometric vectors, and area names mapping data streams.</p>
+            <div id="adminLiveLogsFeedViewport"><p style="color:#64748b;">Awaiting database activity vectors...</p></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDEMuw60DEiC1WDRdQ5vslBKS8LimB_Uj0",
+            authDomain: "studyhub-33164.firebaseapp.com",
+            databaseURL: "https://studyhub-33164-default-rtdb.firebaseio.com",
+            projectId: "studyhub-33164",
+            storageBucket: "studyhub-33164.firebasestorage.app",
+            messagingSenderId: "918352715015",
+            appId: "1:918352715015:web:f92d94cb0ac679d432b9a2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.executeCreateNewAccessPasswordToken = function() {
+            const label = document.getElementById('passLabelInput').value.trim();
+            const token = document.getElementById('passTokenStrInput').value.trim();
+
+            if(!label || !token) return alert("Please present metrics for all functional parameter inputs.");
+
+            const passDbRef = ref(db, 'adminPasswords');
+            push(passDbRef, {
+                descLabel: label,
+                token: token,
+                createdAt: Date.now()
+            }).then(() => {
+                alert("New structural passphrase token added successfully.");
+                document.getElementById('passLabelInput').value = "";
+                document.getElementById('passTokenStrInput').value = "";
+            });
+        };
+
+        window.executeRevokePasswordToken = function(targetFirebaseId) {
+            if(confirm("Are you sure you want to permanently revoke this authorization passphrase token?")) {
+                remove(ref(db, `adminPasswords/${targetFirebaseId}`)).then(() => {
+                    alert("Authorization passphrase removed successfully.");
+                });
+            }
+        };
+
+        // Real-Time Access Tokens Listener Stream
+        onValue(ref(db, 'adminPasswords'), snapshot => {
+            const viewport = document.getElementById('activeTokensViewport');
+            let htmlStr = ""; let counter = 0;
+            snapshot.forEach(child => {
+                counter++;
+                const p = child.val();
+                htmlStr += `
+                    <div class="token-card">
+                        <div class="token-info">
+                            <b>${p.token}</b>
+                            <p><strong>Assignment:</strong> ${p.descLabel}</p>
+                        </div>
+                        <button class="btn-delete" onclick="executeRevokePasswordToken('${child.key}')"><i class="fas fa-trash-can"></i></button>
+                    </div>`;
+            });
+            viewport.innerHTML = counter > 0 ? htmlStr : `<p style="color:#64748b; font-size:13px;">No active tokens deployed yet. System relies solely on default fallback configurations.</p>`;
+        });
+
+        // Real-Time Terminal Audit Entry Tracker Stream
+        onValue(ref(db, 'adminLogs'), snapshot => {
+            const viewport = document.getElementById('adminLiveLogsFeedViewport');
+            let htmlStr = ""; let counter = 0;
+            
+            // Sort array into reverse chronological mapping layout order
+            let parsedLogsList = [];
+            snapshot.forEach(child => {
+                parsedLogsList.unshift(child.val());
+            });
+
+            parsedLogsList.forEach(log => {
+                counter++;
+                let logFormattedTime = new Date(log.timestamp).toLocaleString();
+                htmlStr += `
+                    <div class="log-item">
+                        <div class="log-meta">
+                            <b><i class="fas fa-user-check"></i> Session Authenticated</b>
+                            <span>${logFormattedTime}</span>
+                        </div>
+                        <p style="font-size: 14px; color:#e2e8f0; font-family: monospace;">Passphrase Token Used: "${logUsedPassphraseMasking(log.usedToken)}"</p>
+                        <p style="font-size: 13px; color:#94a3b8; margin-top: 6px;"><i class="fas fa-location-crosshairs" style="color: #f43f5e;"></i> Location: <b>${log.resolvedArea}</b></p>
+                        <p style="font-size: 12px; color: #64748b; margin-top: 2px;">Vectors: Lat ${log.lat.toFixed(5)}, Lng ${log.lng.toFixed(5)}</p>
+                    </div>`;
+            });
+            viewport.innerHTML = counter > 0 ? htmlStr : `<p style="color:#64748b; font-size:13px;">No authorization entry logs captured yet.</p>`;
+        });
+
+        function logUsedPassphraseMasking(str) {
+            if(str.length <= 4) return "****";
+            return str.substring(0, 2) + "****" + str.substring(str.length - 2);
+        }
+    </script>
+</body>
+</html>
