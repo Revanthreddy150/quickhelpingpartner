@@ -632,14 +632,14 @@
             });
         };
 
-        // OpenLayers Dynamic Navigation Routing Setup
+        // OpenLayers Live Driving Best Route Injection via OSRM API
         window.renderDynamicNavigationRouteTrack = function(destLat, destLng, pickLat = null, pickLng = null) {
             document.getElementById('routingMapBox').classList.remove('hidden');
-            setTimeout(() => {
+            setTimeout(async () => {
                 const driverLonLat = [driverCurrentLongitude, driverCurrentLatitude];
                 const destLonLat = [destLng, destLat];
 
-                // Setup layout instances if not previously declared
+                // Setup OpenLayers instance if not previously declared
                 if (!liveRouteMapInstance) {
                     vectorSourceInstance = new ol.source.Vector();
                     vectorLayerInstance = new ol.layer.Vector({
@@ -665,64 +665,84 @@
                     vectorSourceInstance.clear();
                 }
 
-                // Helper vector styles mapping strategy
+                // Helper marker point design style mapping logic
                 const createMarkerStyle = (color) => {
                     return new ol.style.Style({
                         image: new ol.style.Circle({
-                            radius: 8,
+                            radius: 9,
                             fill: new ol.style.Fill({ color: color }),
                             stroke: new ol.style.Stroke({ color: '#fff', width: 3 })
                         })
                     });
                 };
 
-                // Driver Position Feature Tracking
-                const driverFeature = new ol.Feature({
-                    geometry: new ol.geom.Point(ol.proj.fromLonLat(driverLonLat))
-                });
+                // Add Location Node Pin Features
+                const driverFeature = new ol.Feature({ geometry: new ol.geom.Point(ol.proj.fromLonLat(driverLonLat)) });
                 driverFeature.setStyle(createMarkerStyle('#0D47A1'));
                 vectorSourceInstance.addFeature(driverFeature);
 
-                // Destination Feature Node Tracking
-                const destFeature = new ol.Feature({
-                    geometry: new ol.geom.Point(ol.proj.fromLonLat(destLonLat))
-                });
+                const destFeature = new ol.Feature({ geometry: new ol.geom.Point(ol.proj.fromLonLat(destLonLat)) });
                 destFeature.setStyle(createMarkerStyle('#d32f2f'));
                 vectorSourceInstance.addFeature(destFeature);
 
-                let routeCoords = [driverLonLat];
-
-                // Conditional Parcel source evaluation logic
+                // Compile Coordinate Query Array for Driving Network Path Tracking
+                let queryCoordinates = `${driverLonLat[0]},${driverLonLat[1]}`;
+                
                 if (pickLat && pickLng) {
                     const pickLonLat = [pickLng, pickLat];
-                    const pickFeature = new ol.Feature({
-                        geometry: new ol.geom.Point(ol.proj.fromLonLat(pickLonLat))
-                    });
+                    const pickFeature = new ol.Feature({ geometry: new ol.geom.Point(ol.proj.fromLonLat(pickLonLat)) });
                     pickFeature.setStyle(createMarkerStyle('#9c27b0'));
                     vectorSourceInstance.addFeature(pickFeature);
-                    routeCoords.push(pickLonLat);
+                    
+                    queryCoordinates += `;${pickLonLat[0]},${pickLonLat[1]}`;
+                }
+                
+                queryCoordinates += `;${destLonLat[0]},${destLonLat[1]}`;
+
+                // Fetching the Best Actual Road Route from OSRM Routing Engine
+                try {
+                    const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${queryCoordinates}?overview=full&geometries=geojson`;
+                    const response = await fetch(osrmUrl);
+                    const routeData = await response.json();
+
+                    if (routeData.code === 'Ok' && routeData.routes.length > 0) {
+                        const geometryCoordinates = routeData.routes[0].geometry.coordinates;
+                        
+                        // Transforming road coordinates into map target projection units
+                        const transformedRouteCoords = geometryCoordinates.map(coord => ol.proj.fromLonLat(coord));
+                        
+                        const roadLineFeature = new ol.Feature({
+                            geometry: new ol.geom.LineString(transformedRouteCoords)
+                        });
+                        
+                        roadLineFeature.setStyle(new ol.style.Style({
+                            stroke: new ol.style.Stroke({
+                                color: '#0D47A1',
+                                width: 5
+                            })
+                        }));
+                        vectorSourceInstance.addFeature(roadLineFeature);
+                    } else {
+                        throw new Error("Fallback to straight tracking line required.");
+                    }
+                } catch (e) {
+                    console.warn("OSRM routing layout skipped or blocked, triggering direct path fallback.", e);
+                    // Fallback Straight Path Routing Strategy configuration
+                    let straightCoords = [driverLonLat];
+                    if (pickLat && pickLng) straightCoords.push([pickLng, pickLat]);
+                    straightCoords.push(destLonLat);
+
+                    const transformedFallback = straightCoords.map(c => ol.proj.fromLonLat(c));
+                    const fallbackLineFeature = new ol.Feature({ geometry: new ol.geom.LineString(transformedFallback) });
+                    fallbackLineFeature.setStyle(new ol.style.Style({
+                        stroke: new ol.style.Stroke({ color: '#ef6c00', width: 4, lineDash: [6, 6] })
+                    }));
+                    vectorSourceInstance.addFeature(fallbackLineFeature);
                 }
 
-                routeCoords.push(destLonLat);
-
-                // Polyline Path Track Configuration Logic Array
-                const transformedCoords = routeCoords.map(coord => ol.proj.fromLonLat(coord));
-                const lineFeature = new ol.Feature({
-                    geometry: new ol.geom.LineString(transformedCoords)
-                });
-                
-                lineFeature.setStyle(new ol.style.Style({
-                    stroke: new ol.style.Stroke({
-                        color: '#9c27b0',
-                        width: 5,
-                        lineDash: [8, 8]
-                    })
-                }));
-                vectorSourceInstance.addFeature(lineFeature);
-
-                // Autoscale viewport configurations to fit layout nodes
+                // Smooth fitting view boundary setup adjustments
                 const layerExtent = vectorSourceInstance.getExtent();
-                liveRouteMapInstance.getView().fit(layerExtent, { padding: [50, 50, 50, 50], duration: 400 });
+                liveRouteMapInstance.getView().fit(layerExtent, { padding: [60, 60, 60, 60], duration: 400 });
             }, 250);
         };
 
